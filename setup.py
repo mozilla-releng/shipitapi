@@ -6,8 +6,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='shipitapi',
-    version='0.0.1',
-    description='Lib package to perform various ops against Ship IT API',
+    version='0.0.3',
+    description='Lib package to facilitate access to Ship IT API operations',
     url='https://github.com/MihaiTabara/shipitapi',
     author='Mihai Tabara',
     author_email='mtabara@mozilla.com',
