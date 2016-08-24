@@ -3,5 +3,7 @@
 ## Running Locally
 
 $ ```virtual venv```
+
 $ ```source venv/bin/activate```
+
 $ ```pip install shipitapi```
