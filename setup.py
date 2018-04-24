@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='shipitapi',
-    version='0.1.0',
+    version='1.0.0',
     description='Lib package to facilitate access to Ship IT API operations',
     url='https://github.com/MihaiTabara/shipitapi',
     author='Mihai Tabara',

@@ -1,1 +1,1 @@
-from .shipitapi import API, Release
+from .shipitapi import API, Release, NewRelease

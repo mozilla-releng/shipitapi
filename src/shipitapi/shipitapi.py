@@ -33,7 +33,7 @@ class API(object):
     url_template = None
 
     def __init__(self, auth, api_root, ca_certs=certifi.where(), timeout=60,
-                 raise_exceptions=True, retry_attempts=5):
+                 raise_exceptions=True, retry_attempts=5, csrf_token_prefix=''):
         self.api_root = api_root.rstrip('/')
         self.auth = auth
         self.verify = ca_certs
@@ -42,6 +42,7 @@ class API(object):
         self.session = requests.session()
         self.csrf_token = None
         self.retries = retry_attempts
+        self.csrf_token_prefix = csrf_token_prefix
 
     def request(self, params=None, data=None, method='GET',
                 url_template_vars={}):
@@ -60,7 +61,8 @@ class API(object):
                 if self.raise_exceptions:
                     res.raise_for_status()
                 self.csrf_token = res.headers['X-CSRF-Token']
-            data['csrf_token'] = self.csrf_token
+            # Some forms require the CSRF prefixed, usually with the product name
+            data['{}csrf_token'.format(self.csrf_token_prefix)] = self.csrf_token
         log.debug('Request to %s', url)
         log.debug('Data sent: %s', data)
 
@@ -108,3 +110,24 @@ class Release(API):
         url_template_vars = {'name': name}
         return self.request(method='POST', data=data,
                             url_template_vars=url_template_vars).content
+
+
+class NewRelease(API):
+    """Wrapper class over shipitapi API class that defines the sole method
+    to create a release.
+    """
+
+    url_template = '/submit_release.html'
+
+    def submit(self, **data):
+        """Submit a new release"""
+        # Every form key should be prefixed with the product name. E.g "branch"
+        # becomes "firefox-branch".
+        product = data['product']
+        prefixed_data = {}
+        for key, value in data.items():
+            prefixed_data['{}-{}'.format(product, key)] = value
+
+        # We get a hard-to-parse HTML page. The consumers are to decide whether
+        # they want to use the status or the content.
+        return self.request(method='POST', data=prefixed_data)
