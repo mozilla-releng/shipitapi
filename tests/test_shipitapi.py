@@ -4,6 +4,7 @@ import mock
 import pytest
 import redo
 import requests
+from freezegun import freeze_time
 
 
 # mock redo library, to make test faster
@@ -19,10 +20,6 @@ def fake(*args, **kwargs):
 redo.retry = fake
 
 
-def test_simple():
-	assert 1 + 1 == 2
-
-
 def create_token(expiry): # expiry is in UTC
 	"""
 	csrf token format is %Y%m%d%H%M%S##...
@@ -30,17 +27,11 @@ def create_token(expiry): # expiry is in UTC
 	return expiry.strftime('%Y%m%d%H%M%S') + '##....'
 
 
+@freeze_time('2018-10-27 00:00:00')
 def test_csrf_token_expired(mocker):
 	from src.shipitapi.shipitapi import is_csrf_token_expired
 
 	now = datetime.datetime.utcnow()
-
-	class NewDate(datetime.datetime):
-		@classmethod
-		def utcnow(cls):
-			return now
-
-	datetime.datetime = NewDate
 	tomorrow = now + datetime.timedelta(days=1)
 
 	# assert token is not expired if expiry date is tomorrow

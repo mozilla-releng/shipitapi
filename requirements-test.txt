@@ -4,3 +4,4 @@ pytest-mock
 redo
 requests
 simplejson
+freezegun
