@@ -1,0 +1,6 @@
+certifi==2018.8.24
+pytest==3.9.2
+pytest-mock==1.10.0
+redo==2.0.1
+requests==2.19.1
+simplejson==3.16.0
