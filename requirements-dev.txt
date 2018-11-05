@@ -6,3 +6,4 @@ redo
 requests
 simplejson
 freezegun
+tox
