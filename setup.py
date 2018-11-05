@@ -18,9 +18,6 @@ setup(
     author='Mihai Tabara',
     author_email='mtabara@mozilla.com',
     install_requires=get_requirements('prod'),
-    extras_require={
-        'dev': get_requirements('dev'),
-    },
     license='MPL',
     classifiers=[],
     keywords='shipit api lib package',
