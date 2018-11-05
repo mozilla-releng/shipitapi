@@ -1,0 +1,9 @@
+certifi
+mock
+pytest
+pytest-mock
+redo
+requests
+simplejson
+freezegun
+tox

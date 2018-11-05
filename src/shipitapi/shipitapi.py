@@ -98,7 +98,7 @@ class Release(API):
         try:
             resp = self.request(url_template_vars={'name': name})
             return json.loads(resp.content)
-        except:
+        except Exception:
             log.error('Caught error while getting release', exc_info=True)
             if resp:
                 log.error(resp.content)

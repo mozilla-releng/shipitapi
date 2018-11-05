@@ -1,0 +1,7 @@
+.coverage
+.idea
+htmlcov
+*.egg-info
+venv
+__pycache__
+.tox
