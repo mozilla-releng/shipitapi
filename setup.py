@@ -4,9 +4,11 @@ Lib package to perform various ops against Ship IT API
 
 from setuptools import setup, find_packages
 
+
 def get_requirements(env):
     with open('requirements-{}.txt'.format(env)) as f:
         return [x.strip() for x in f.read().split('\n') if not x.startswith('#')]
+
 
 setup(
     name='shipitapi',
@@ -15,10 +17,9 @@ setup(
     url='https://github.com/MihaiTabara/shipitapi',
     author='Mihai Tabara',
     author_email='mtabara@mozilla.com',
-    install_requires=get_requirements('base'),
+    install_requires=get_requirements('prod'),
     extras_require={
         'dev': get_requirements('dev'),
-        'test': get_requirements('test'),
     },
     license='MPL',
     classifiers=[],

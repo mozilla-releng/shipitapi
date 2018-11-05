@@ -1,7 +1,0 @@
-certifi
-pytest
-pytest-mock
-redo
-requests
-simplejson
-freezegun
