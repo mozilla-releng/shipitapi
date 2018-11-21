@@ -1,10 +1,9 @@
 import logging
 from datetime import datetime
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import json
+
 import certifi
+import mohawk
 import requests
 from redo import retry
 
@@ -131,3 +130,101 @@ class NewRelease(API):
         # We get a hard-to-parse HTML page. The consumers are to decide whether
         # they want to use the status or the content.
         return self.request(method='POST', data=prefixed_data)
+
+
+class API_V2(object):
+    """A class that knows how to make requests to a Ship It v2 server, including
+    generating hawk headers.
+
+    url_template: The URL to submit to when request() is called. Standard
+                    Python string interpolation can be used here
+    """
+    url_template = None
+
+    def __init__(
+        self, taskcluster_client_id, taskcluster_access_token, api_root,
+        ca_certs=certifi.where(), timeout=60, raise_exceptions=True,
+        retry_attempts=5
+    ):
+        self.taskcluster_client_id = taskcluster_client_id
+        self.taskcluster_access_token = taskcluster_access_token
+        self.api_root = api_root.rstrip('/')
+        self.verify = ca_certs
+        self.timeout = timeout
+        self.raise_exceptions = raise_exceptions
+        self.retries = retry_attempts
+        self.session = requests.session()
+
+    @staticmethod
+    def _get_taskcluster_headers(request_url, method, content,
+                                 taskcluster_client_id, taskcluster_access_token):
+        hawk = mohawk.Sender(
+            {
+                'id': taskcluster_client_id,
+                'key': taskcluster_access_token,
+                'algorithm': 'sha256',
+            },
+            request_url,
+            method,
+            content,
+            content_type='application/json',
+        )
+        return {
+            'Authorization': hawk.request_header,
+            'Content-Type': 'application/json',
+        }
+
+    def request(self, data=None, method='GET',
+                url_template_vars={}):
+        url = self.api_root + self.url_template % url_template_vars
+        if method.upper() not in ('GET', 'HEAD'):
+            headers = self._get_taskcluster_headers(
+                url, method, data, self.taskcluster_client_id,
+                self.taskcluster_access_token)
+        else:
+            headers = None
+        try:
+            def _req():
+                req = self.session.request(
+                    method=method, url=url, data=data, timeout=self.timeout,
+                    verify=self.verify, headers=headers)
+                if self.raise_exceptions:
+                    req.raise_for_status()
+                return req
+
+            return retry(_req, sleeptime=5, max_sleeptime=15,
+                         retry_exceptions=(requests.HTTPError,
+                                           requests.ConnectionError),
+                         attempts=self.retries)
+        except requests.HTTPError as err:
+            log.error('Caught HTTPError: %d %s',
+                      err.response.status_code, err.response.content,
+                      exc_info=True)
+            raise
+
+
+class Release_V2(API_V2):
+    """Wrapper class over shipitapi API V2 class that defines the sole method
+    to update the status of the release to 'shipped'.
+    """
+
+    url_template = '/releases/%(name)s'
+
+    def getRelease(self, name):
+        resp = None
+        try:
+            resp = self.request(url_template_vars={'name': name})
+            return json.loads(resp.content)
+        except Exception:
+            log.error('Caught error while getting release', exc_info=True)
+            if resp:
+                log.error(resp.content)
+                log.error('Response code: %d', resp.status_code)
+            raise
+
+    def update_status(self, name, status):
+        """Update release status"""
+        url_template_vars = {'name': name}
+        data = json.dumps({'status': status})
+        return self.request(method='PATCH', data=data,
+                            url_template_vars=url_template_vars).content
