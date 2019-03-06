@@ -132,14 +132,10 @@ class NewRelease(API):
         return self.request(method='POST', data=prefixed_data)
 
 
-class API_V2(object):
+class Release_V2(object):
     """A class that knows how to make requests to a Ship It v2 server, including
     generating hawk headers.
-
-    url_template: The URL to submit to when request() is called. Standard
-                    Python string interpolation can be used here
     """
-    url_template = None
 
     def __init__(
         self, taskcluster_client_id, taskcluster_access_token, api_root,
@@ -174,9 +170,8 @@ class API_V2(object):
             'Content-Type': 'application/json',
         }
 
-    def request(self, data=None, method='GET',
-                url_template_vars={}):
-        url = self.api_root + self.url_template % url_template_vars
+    def _request(self, api_endpoint, data=None, method='GET'):
+        url = '{}{}'.format(self.api_root, api_endpoint)
         if method.upper() not in ('GET', 'HEAD'):
             headers = self._get_taskcluster_headers(
                 url, method, data, self.taskcluster_client_id,
@@ -202,18 +197,10 @@ class API_V2(object):
                       exc_info=True)
             raise
 
-
-class Release_V2(API_V2):
-    """Wrapper class over shipitapi API V2 class that defines the sole method
-    to update the status of the release to 'shipped'.
-    """
-
-    url_template = '/releases/%(name)s'
-
     def getRelease(self, name):
         resp = None
         try:
-            resp = self.request(url_template_vars={'name': name})
+            resp = self._request(api_endpoint='/releases/{}'.format(name))
             return json.loads(resp.content)
         except Exception:
             log.error('Caught error while getting release', exc_info=True)
@@ -222,9 +209,11 @@ class Release_V2(API_V2):
                 log.error('Response code: %d', resp.status_code)
             raise
 
-    def update_status(self, name, status):
+    def update_status(self, name, status, rebuild_product_details=True):
         """Update release status"""
-        url_template_vars = {'name': name}
         data = json.dumps({'status': status})
-        return self.request(method='PATCH', data=data,
-                            url_template_vars=url_template_vars).content
+        res = self._request(
+            api_endpoint='/releases/{}'.format(name), method='PATCH', data=data).content
+        if rebuild_product_details:
+            self._request(api_endpoint='/product-details', method='POST', data='{}')
+        return res
