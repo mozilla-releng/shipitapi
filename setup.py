@@ -12,7 +12,7 @@ def get_requirements():
 
 setup(
     name='shipitapi',
-    version='2.1.0',
+    version='3.0.0',
     description='Lib package to facilitate access to Ship IT API operations',
     url='https://github.com/MihaiTabara/shipitapi',
     author='Mihai Tabara',
