@@ -47,14 +47,12 @@ class Release_V2(object):
             'Content-Type': 'application/json',
         }
 
-    def _request(self, api_endpoint, data=None, method='GET'):
+    def _request(self, api_endpoint, data=None, method='GET', headers={}):
         url = '{}{}'.format(self.api_root, api_endpoint)
         if method.upper() not in ('GET', 'HEAD'):
-            headers = self._get_taskcluster_headers(
+            headers.update(self._get_taskcluster_headers(
                 url, method, data, self.taskcluster_client_id,
-                self.taskcluster_access_token)
-        else:
-            headers = None
+                self.taskcluster_access_token))
         try:
             def _req():
                 req = self.session.request(
@@ -74,10 +72,10 @@ class Release_V2(object):
                       exc_info=True)
             raise
 
-    def getRelease(self, name):
+    def getRelease(self, name, headers={}):
         resp = None
         try:
-            resp = self._request(api_endpoint='/releases/{}'.format(name))
+            resp = self._request(api_endpoint='/releases/{}'.format(name), headers=headers)
             return json.loads(resp.content)
         except Exception:
             log.error('Caught error while getting release', exc_info=True)
@@ -86,11 +84,11 @@ class Release_V2(object):
                 log.error('Response code: %d', resp.status_code)
             raise
 
-    def update_status(self, name, status, rebuild_product_details=True):
+    def update_status(self, name, status, rebuild_product_details=True, headers={}):
         """Update release status"""
         data = json.dumps({'status': status})
         res = self._request(
-            api_endpoint='/releases/{}'.format(name), method='PATCH', data=data).content
+            api_endpoint='/releases/{}'.format(name), method='PATCH', data=data, headers=headers).content
         if rebuild_product_details:
-            self._request(api_endpoint='/product-details', method='POST', data='{}')
+            self._request(api_endpoint='/product-details', method='POST', data='{}', headers=headers)
         return res

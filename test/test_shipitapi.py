@@ -44,7 +44,22 @@ def test_release_v2_class(mocker):
     correct_url = 'https://www.apiroot.com/releases/releaseName'
     release.session.request.assert_called_with(
         data=None,
-        headers=None,
+        headers={},
+        method='GET',
+        timeout=mock.ANY,
+        verify=mock.ANY,
+        url=correct_url
+    )
+    assert release.session.request.call_count == api_call_count + 1
+    api_call_count += 1
+
+    # test that getRelease pass the headers
+    ret = release.getRelease(release_name, headers={'X-Test': 'yes'})
+    assert ret['test'] is True
+    correct_url = 'https://www.apiroot.com/releases/releaseName'
+    release.session.request.assert_called_with(
+        data=None,
+        headers={'X-Test': 'yes'},
         method='GET',
         timeout=mock.ANY,
         verify=mock.ANY,
@@ -92,7 +107,7 @@ def test_release_v2_class(mocker):
     correct_url = 'https://www.apiroot.com/releases/releaseName'
     release.session.request.assert_called_with(
         data=None,
-        headers=None,
+        headers={},
         method='GET',
         timeout=mock.ANY,
         verify=mock.ANY,

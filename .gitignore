@@ -5,3 +5,5 @@ htmlcov
 venv
 __pycache__
 .tox
+build/
+dist/
